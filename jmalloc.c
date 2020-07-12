@@ -1,10 +1,8 @@
 #include "jmalloc.h"
 
-#include <assert.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <memory.h>
 
 // The allocator state is maintained in `free_list`. Upon initialization, the
 // `free_list` is initialized as a single entry representing the entire of the
