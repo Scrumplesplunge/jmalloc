@@ -2,7 +2,7 @@
 #define JMALLOC_H
 
 // Initialize the allocator with a buffer which it can allocate from.
-void jinit(char* buffer, int size);
+void jinit(void* buffer, int size);
 
 // Output diagnostic stats about the allocator.
 void jstats();

@@ -1,5 +1,6 @@
 #include "jmalloc.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -18,9 +19,9 @@ enum { alloc_unit = sizeof(struct free_node) };
 
 static struct free_node* free_list;
 
-void jinit(char* buffer, int size) {
+void jinit(void* buffer, int size) {
   char* aligned = (char*)jalign((intptr_t)buffer);
-  size -= aligned - buffer;
+  size = (size + aligned - (char*)buffer) & ~(alloc_unit - 1);
   free_list = (void*)aligned;
   free_list->next = NULL;
   free_list->size = size;
@@ -54,19 +55,21 @@ void* jmalloc(int size) {
     return buffer;
   } else {
     // Allocation splits the node.
-    struct free_node* node_next = (*node)->next;
-    int node_size = (*node)->size;
-    void* buffer = (void*)(*node);
-    *node = (void*)((char*)buffer + size);
-    (*node)->next = node_next;
-    (*node)->size = node_size - size;
-    return buffer;
+    (*node)->size -= size;
+    return (char*)(*node) + (*node)->size;
   }
 }
 
 void jfree(void* p, int size) {
   if (!p) return;
   size = jalign(size);
+  if (!free_list) {
+    // The heap was completely exhausted and this is the only available memory.
+    free_list = p;
+    free_list->size = size;
+    free_list->next = NULL;
+    return;
+  }
   // Find the last node which is before the allocation in memory.
   struct free_node** node = &free_list;
   while ((*node)->next && (void*)(*node)->next < p) node = &(*node)->next;
